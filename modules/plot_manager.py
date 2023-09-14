@@ -1,0 +1,54 @@
+import logging
+import numpy as np
+import matplotlib.pyplot as plt
+
+class PlotManager:
+    def __init__(self, env, intersection_type, plt_discomfort_value_record_interval) -> None:
+        self.env = env
+        self.intersection_type = intersection_type
+        self.plt_discomfort_value_record_interval = plt_discomfort_value_record_interval
+
+        # discomport_value_queue[<intersection]
+        self.now_discomfort_value = np.zeros(intersection_type)
+
+        self.isIntervalRecord = False
+        self.list_discomfort_value = np.empty((0, intersection_type))
+        self.list_avg_discomfort_value = []
+
+        self.action = env.process(self.run())
+
+    def run(self):
+        self.env.process(self.record_discomfort_counter())
+        yield self.env.timeout(0)
+
+    def update_now_discomfort_value(self, vehicle_queue):
+        for inter in range(self.intersection_type):
+            for lane in range(len(vehicle_queue[inter])):
+                for vi in vehicle_queue[inter][lane]:
+                    self.now_discomfort_value[inter] += vi.discomfort_value
+        
+        if self.isIntervalRecord == True:
+            self.list_discomfort_value = np.concatenate([self.list_discomfort_value, [self.now_discomfort_value]])
+            self.list_avg_discomfort_value.append(np.average(self.now_discomfort_value))
+            logging.debug("{:6.2f} - {}".format(self.env.now, self.now_discomfort_value))
+            self.isIntervalRecord = False
+
+    def reset_now_discomfort_value(self):
+        self.now_discomfort_value = np.zeros(self.intersection_type)
+
+    def record_discomfort_counter(self):
+        while True:
+            if self.isIntervalRecord == False:
+                self. isIntervalRecord = True
+                
+            yield self.env.timeout(self.plt_discomfort_value_record_interval)
+
+    def print_plot(self):
+        self.list_avg_discomfort_value = np.array(self.list_avg_discomfort_value)
+
+        plt.subplot(121)
+        plt.plot(self.list_avg_discomfort_value)
+        plt.subplot(122)
+        plt.plot(self.list_discomfort_value)
+
+        plt.show()
