@@ -45,10 +45,24 @@ class PlotManager:
 
     def print_plot(self):
         self.list_avg_discomfort_value = np.array(self.list_avg_discomfort_value)
+        intersection_labels = []
+
+        for i in range(self.intersection_type):
+            intersection_labels.append("Load " + str(i))
 
         plt.subplot(121)
+        plt.title("Average Discomfort Value")
+        plt.xlabel("Time")
+        plt.ylabel("Average Discomport Value")
         plt.plot(self.list_avg_discomfort_value)
+
         plt.subplot(122)
-        plt.plot(self.list_discomfort_value)
+        plt.plot(self.list_discomfort_value, label=intersection_labels)
+        plt.title("Discomfort Value by lanes")
+        plt.xlabel("Time")
+        plt.ylabel("Discomport Value")
+        plt.legend()
+
+        print(self.list_discomfort_value)
 
         plt.show()

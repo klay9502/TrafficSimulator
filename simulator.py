@@ -105,7 +105,7 @@ class Simulator:
         env.process(self.update(env, trafficlight_manager, vehicle_generator, plot_manager))
         env.run(until=self.simulate_time)
 
-        # plot_manager.print_plot()
+        plot_manager.print_plot()
 
     def update(self, env, trafficlight_manager, vehicle_generator, plot_manager) -> None:
         while True:
