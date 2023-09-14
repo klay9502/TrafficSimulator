@@ -1,5 +1,6 @@
 import logging
 import numpy as np
+from collections import deque
 
 from definitions.vehicle import Vehicle
 
@@ -17,7 +18,7 @@ class VehicleGenorator:
         self.infinity = infinity
 
         # vehicle_queue[<intersection_position>][<lane_position>][<vehicle>]
-        self.vehicle_queue = [[[] for j in range(number_of_lanes)] for i in range(intersection_type)]
+        self.vehicle_queue = [[deque() for j in range(number_of_lanes)] for i in range(intersection_type)]
 
         self.action = env.process(self.vehicle_genorate())
 
@@ -47,7 +48,7 @@ class VehicleGenorator:
             for lane in range(self.number_of_lanes):
                 for vi in range(len(self.vehicle_queue[inter][lane])):
                     if self.vehicle_queue[inter][lane][vi].isProcess == False:
-                        self.vehicle_queue[inter][lane].pop(0)
+                        self.vehicle_queue[inter][lane].popleft()
                         break
 
     def update_vehlcies_state(self, traffic_signal):
