@@ -12,7 +12,10 @@ class Simulator:
         self.conf = conf
         self.simulate_time = 0.0
         self.simulate_interval = 0.0
+        self.time_interval = 0
+
         self.pattern_file_path = ""
+        self.gauss_standard_deviation = 0.0
         self.learning_type = ""
 
         self.intersection_type = 0
@@ -23,7 +26,6 @@ class Simulator:
         self.vehicle_spawn_infinity = True
         self.vehicnumber_of_vehicle = 0
         self.discomfort_value_update_interval = 0
-        self.vehicle_spawn_interval = 0.0
         self.vehicle_speed = 0.0
 
         self.plt_discomfort_value_record_interval = 0.0
@@ -49,6 +51,8 @@ class Simulator:
                         self.simulate_time = float(val)
                     if key == "simulate_interval":
                         self.simulate_interval = float(val)
+                    if key == "time_interval":
+                        self.time_interval = int(val)
                     if key == "pattern_file_name":
                         path = os.getcwd()
                         file_name = os.path.join(path, val)
@@ -57,6 +61,8 @@ class Simulator:
                         else:
                             logging.error("There are no file in {}".format(file_name))
                             break
+                    if key == "gauss_standard_deviation":
+                        self.gauss_standard_deviation = float(val)
                     if key == "learning_type":
                         self.learning_type = str(val)
                     if key == "intersection_type":
@@ -74,8 +80,6 @@ class Simulator:
                         self.number_of_vehicle = int(val)
                     if key == "discomfort_value_update_interval":
                         self.discomfort_value_update_interval = int(val)
-                    if key == "vehicle_spawn_interval":
-                        self.vehicle_spawn_interval = float(val)
                     if key == "vehicle_speed":
                         self.vehicle_speed = float(val)
                     if key == "plt_discomfort_value_record_interval":
@@ -87,10 +91,10 @@ class Simulator:
 
     def run(self) -> None:
         env = simpy.Environment()
-        pattern = Pattern(self.pattern_file_path)
+        pattern = Pattern(env, self.time_interval, self.pattern_file_path, self.gauss_standard_deviation)
         trafficlight_manager = TrafficLightManager(env, self.learning_type, self.intersection_type, self.time_of_green_signal)
         vehicle_generator = VehicleGenorator(env,
-                                            self.vehicle_spawn_interval,
+                                            pattern,
                                             self.number_of_vehicle,
                                             self.intersection_type,
                                             self.number_of_lanes,
@@ -119,6 +123,7 @@ class Simulator:
             plot_manager.reset_now_discomfort_value()
 
             yield env.timeout(self.simulate_interval)
+            
 
 def command_line_args():
     parser = argparse.ArgumentParser()

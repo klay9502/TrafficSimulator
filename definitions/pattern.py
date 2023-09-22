@@ -1,11 +1,37 @@
+import logging
+import random
 import pandas as pd
+import numpy as np
 
 class Pattern:
-    def __init__(self, pattern_file_path) -> None:
+    def __init__(self, env, time_interval, pattern_file_path, gauss_standard_deviation) -> None:
+        self.env = env
+        self.time_interval = time_interval
         self.path = pattern_file_path
+        self.gauss_standard_deviation = gauss_standard_deviation
+        self.list_data = np.empty((0, 0))
+
+        self.now_time = 0
+        self.old_env_time = 0.0
 
         self.read_file()
+        self.action = env.process(self.time_update())
 
     def read_file(self):
         data = pd.read_csv(self.path)
-        print(data)
+
+        # Convert type dataframe to numpy array.
+        self.list_data = data.__array__()
+    
+    def time_update(self):
+        while True:
+            yield self.env.timeout(self.time_interval)
+
+            if self.now_time >= ((self.list_data.size / len(self.list_data)) - 1):
+                self.now_time = 0
+            else:
+                self.now_time += 1
+            logging.info("{:6.2f} - Time: {:2}, Time is changed.".format(self.env.now, self.now_time))
+            
+    def vehicle_spawn_time(self, direction):
+        return abs(random.gauss(self.list_data[direction][self.now_time], self.gauss_standard_deviation))
