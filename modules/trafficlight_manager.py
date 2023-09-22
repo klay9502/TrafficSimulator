@@ -20,7 +20,11 @@ class TrafficLightManager:
 
             if self.learning_type == "random":
                 self.now_signal = np.random.randint(0, self.intersection_type)
-                # self.now_signal = 1 # Only Debug
+            if self.learning_type == "clockwise":
+                if self.now_signal >= self.intersection_type - 1:
+                    self.now_signal = 0
+                else:
+                    self.now_signal += 1
 
             self.set_is_signal_changed(True)
             logging.info("Time: {} - Now Signal: {}".format(self.env.now, self.now_signal))
