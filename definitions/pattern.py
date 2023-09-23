@@ -35,3 +35,9 @@ class Pattern:
             
     def vehicle_spawn_time(self, direction):
         return abs(random.gauss(self.list_data[direction][self.now_time], self.gauss_standard_deviation))
+    
+    def get_last_time(self):
+        return self.list_data.size / len(self.list_data)
+    
+    def get_now_time(self):
+        return self.now_time

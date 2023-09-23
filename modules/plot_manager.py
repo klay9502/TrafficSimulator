@@ -3,9 +3,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class PlotManager:
-    def __init__(self, env, intersection_type, plt_discomfort_value_record_interval) -> None:
+    def __init__(self, env, intersection_type, plt_moving_average, plt_moving_average_window, plt_discomfort_value_record_interval) -> None:
         self.env = env
         self.intersection_type = intersection_type
+        self.plt_moving_average = plt_moving_average
+        self.plt_moving_average_window = plt_moving_average_window
         self.plt_discomfort_value_record_interval = plt_discomfort_value_record_interval
 
         # discomport_value_queue[<intersection]
@@ -33,6 +35,9 @@ class PlotManager:
             logging.debug("{:6.2f} - {}".format(self.env.now, self.now_discomfort_value))
             self.isIntervalRecord = False
 
+    def get_now_discomfort_value(self):
+        return self.now_discomfort_value
+
     def reset_now_discomfort_value(self):
         self.now_discomfort_value = np.zeros(self.intersection_type)
 
@@ -45,6 +50,10 @@ class PlotManager:
 
     def print_plot(self):
         self.list_avg_discomfort_value = np.array(self.list_avg_discomfort_value)
+
+        if (self.plt_moving_average):
+            self.list_avg_discomfort_value = self.moving_average(self.list_avg_discomfort_value, self.plt_moving_average_window)
+
         intersection_labels = []
 
         for i in range(self.intersection_type):
@@ -63,6 +72,7 @@ class PlotManager:
         plt.ylabel("Discomport Value")
         plt.legend()
 
-        print(self.list_discomfort_value)
-
         plt.show()
+
+    def moving_average(self, x, w):
+        return np.convolve(x, np.ones(w), 'valid') / w

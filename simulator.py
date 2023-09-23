@@ -18,6 +18,9 @@ class Simulator:
         self.gauss_standard_deviation = 0.0
         self.learning_type = ""
 
+        self.q_alpha = 0.0
+        self.q_gamma = 0.0
+
         self.intersection_type = 0
         self.number_of_lanes = 0
 
@@ -28,6 +31,8 @@ class Simulator:
         self.discomfort_value_update_interval = 0
         self.vehicle_speed = 0.0
 
+        self.plt_moving_average = False
+        self.plt_moving_average_window = 0
         self.plt_discomfort_value_record_interval = 0.0
 
         self.parse_config()
@@ -65,6 +70,10 @@ class Simulator:
                         self.gauss_standard_deviation = float(val)
                     if key == "learning_type":
                         self.learning_type = str(val)
+                    if key == "q_alpha":
+                        self.q_alpha = float(val)
+                    if key == "q_gamma":
+                        self.q_gamma = float(val)
                     if key == "intersection_type":
                         self.intersection_type = int(val)
                     if key == "number_of_lanes":
@@ -79,9 +88,16 @@ class Simulator:
                     if key == "number_of_vehicle":
                         self.number_of_vehicle = int(val)
                     if key == "discomfort_value_update_interval":
-                        self.discomfort_value_update_interval = int(val)
+                        self.discomfort_value_update_interval = float(val)
                     if key == "vehicle_speed":
                         self.vehicle_speed = float(val)
+                    if key == "plt_moving_average":
+                        if val == "True":
+                            self.plt_moving_average = True
+                        else:
+                            self.plt_moving_average = False
+                    if key == "plt_moving_average_window":
+                        self.plt_moving_average_window = int(val)
                     if key == "plt_discomfort_value_record_interval":
                         self.plt_discomfort_value_record_interval = float(val)
 
@@ -92,7 +108,13 @@ class Simulator:
     def run(self) -> None:
         env = simpy.Environment()
         pattern = Pattern(env, self.time_interval, self.pattern_file_path, self.gauss_standard_deviation)
-        trafficlight_manager = TrafficLightManager(env, self.learning_type, self.intersection_type, self.time_of_green_signal)
+        trafficlight_manager = TrafficLightManager(env,
+                                                   pattern,
+                                                   self.learning_type,
+                                                   self.intersection_type,
+                                                   self.time_of_green_signal,
+                                                   self.q_alpha,
+                                                   self.q_gamma)
         vehicle_generator = VehicleGenorator(env,
                                             pattern,
                                             self.number_of_vehicle,
@@ -104,6 +126,8 @@ class Simulator:
                                             self.vehicle_spawn_infinity)
         plot_manager = PlotManager(env,
                                    self.intersection_type,
+                                   self.plt_moving_average,
+                                   self.plt_moving_average_window,
                                    self.plt_discomfort_value_record_interval)
         
         env.process(self.update(env, trafficlight_manager, vehicle_generator, plot_manager))
@@ -120,6 +144,7 @@ class Simulator:
             vehicle_generator.update_vehicle_queue()
 
             plot_manager.update_now_discomfort_value(vehicle_generator.get_vehicle_queue())
+            trafficlight_manager.set_now_discomfort_value(plot_manager.get_now_discomfort_value())
             plot_manager.reset_now_discomfort_value()
 
             yield env.timeout(self.simulate_interval)
@@ -128,7 +153,7 @@ class Simulator:
 def command_line_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--conf", required=True, metavar="<configuration file>", help="Configuration File", type=str)
-    parser.add_argument("-l", "--log", metavar="<log level (DEBUG/INFO/WARNING/ERROR)>", help="Log Level (DEBUG/INFO/WARNING/ERROR)", type=str, default="DEBUG")
+    parser.add_argument("-l", "--log", metavar="<log level (DEBUG/INFO/WARNING/ERROR)>", help="Log Level (DEBUG/INFO/WARNING/ERROR)", type=str, default="INFO")
     args = parser.parse_args()
     return args
 
