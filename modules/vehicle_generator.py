@@ -18,7 +18,7 @@ class VehicleGenerator:
         self.time_of_green_signal = time_of_green_signal
         self.infinity = infinity
 
-        # vehicle_queue[<intersection_position>][<lane_position>][<vehicle>]
+        # vehicle_queue[<intersection_direction>][<lane_position>][<vehicle>]
         self.vehicle_queue = [[deque() for j in range(number_of_lanes)] for i in range(intersection_type)]
 
         self.action = [env.process(self.vehicle_generate(i)) for i in range(intersection_type)]

@@ -3,6 +3,7 @@ import argparse
 import logging
 import simpy
 from definitions.pattern import Pattern
+from modules.pedestrian_generator import PedestrianGenerator
 from modules.trafficlight_manager import TrafficLightManager
 from modules.vehicle_generator import VehicleGenerator
 from modules.plot_manager import PlotManager
@@ -14,12 +15,15 @@ class Simulator:
         self.simulate_interval = 0.0
         self.time_interval = 0
 
-        self.pattern_file_path = ""
+        self.vehicle_pattern_file_path = ""
+        self.ped_pattern_file_path = ""
         self.gauss_standard_deviation = 0.0
         self.learning_type = ""
 
         self.q_alpha = 0.0
         self.q_gamma = 0.0
+
+        self.weight = 0.0
 
         self.intersection_type = 0
         self.number_of_lanes = 0
@@ -58,11 +62,19 @@ class Simulator:
                         self.simulate_interval = float(val)
                     if key == "time_interval":
                         self.time_interval = int(val)
-                    if key == "pattern_file_name":
+                    if key == "vehicle_pattern_file_name":
                         path = os.getcwd()
                         file_name = os.path.join(path, val)
                         if os.path.exists(file_name):
-                            self.pattern_file_path = file_name
+                            self.vehicle_pattern_file_path = file_name
+                        else:
+                            logging.error("There are no file in {}".format(file_name))
+                            break
+                    if key == "pedestrian_pattern_file_name":
+                        path = os.getcwd()
+                        file_name = os.path.join(path, val)
+                        if os.path.exists(file_name):
+                            self.ped_pattern_file_path = file_name
                         else:
                             logging.error("There are no file in {}".format(file_name))
                             break
@@ -74,6 +86,8 @@ class Simulator:
                         self.q_alpha = float(val)
                     if key == "q_gamma":
                         self.q_gamma = float(val)
+                    if key == "weight":
+                        self.weight = float(val)
                     if key == "intersection_type":
                         self.intersection_type = int(val)
                     if key == "number_of_lanes":
@@ -107,14 +121,15 @@ class Simulator:
 
     def run(self) -> None:
         env = simpy.Environment()
-        pattern = Pattern(env, self.time_interval, self.pattern_file_path, self.gauss_standard_deviation)
+        pattern = Pattern(env, self.time_interval, self.vehicle_pattern_file_path, self.ped_pattern_file_path, self.gauss_standard_deviation)
         trafficlight_manager = TrafficLightManager(env,
                                                    pattern,
                                                    self.learning_type,
                                                    self.intersection_type,
                                                    self.time_of_green_signal,
                                                    self.q_alpha,
-                                                   self.q_gamma)
+                                                   self.q_gamma,
+                                                   self.weight)
         vehicle_generator = VehicleGenerator(env,
                                             pattern,
                                             self.number_of_vehicle,
@@ -124,27 +139,35 @@ class Simulator:
                                             self.vehicle_speed,
                                             self.time_of_green_signal,
                                             self.vehicle_spawn_infinity)
+        
+        ped_generator = PedestrianGenerator(env,
+                                            pattern,
+                                            self.intersection_type,
+                                            self.discomfort_value_update_interval)
+
         plot_manager = PlotManager(env,
                                    self.intersection_type,
                                    self.plt_moving_average,
                                    self.plt_moving_average_window,
                                    self.plt_discomfort_value_record_interval)
         
-        env.process(self.update(env, trafficlight_manager, vehicle_generator, plot_manager))
+        env.process(self.update(env, trafficlight_manager, vehicle_generator, ped_generator, plot_manager))
         env.run(until=self.simulate_time)
 
         plot_manager.print_plot()
 
-    def update(self, env, trafficlight_manager, vehicle_generator, plot_manager) -> None:
+    def update(self, env, trafficlight_manager, vehicle_generator, ped_generator, plot_manager) -> None:
         while True:
             if trafficlight_manager.get_is_signal_changed():
                 vehicle_generator.update_vehlcies_state(trafficlight_manager.get_traffic_signal())
+                ped_generator.update_ped_state(trafficlight_manager.get_traffic_signal())
                 trafficlight_manager.set_is_signal_changed(False)
 
             vehicle_generator.update_vehicle_queue()
+            ped_generator.update_ped_queue()
 
-            plot_manager.update_now_discomfort_value(vehicle_generator.get_vehicle_queue())
-            trafficlight_manager.set_now_discomfort_value(plot_manager.get_now_discomfort_value())
+            plot_manager.update_now_discomfort_value(vehicle_generator.get_vehicle_queue(), ped_generator.get_ped_queue(), self.weight)
+            trafficlight_manager.set_now_discomfort_value(plot_manager.get_now_vehicle_discomfort_value(), plot_manager.get_now_ped_discomfort_value())
             plot_manager.reset_now_discomfort_value()
 
             yield env.timeout(self.simulate_interval)

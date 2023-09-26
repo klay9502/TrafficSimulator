@@ -20,7 +20,7 @@ class Vehicle:
         self.action = env.process(self.run())
 
     def run(self):
-        logging.debug("Time: {} - ID: {}, Start Point: {}, End Point: {}, Spawn Vehicle!".format(self.env.now, self.vehicle_id, self.start_point, self.end_point))
+        logging.debug("{:6.2f} - Spawn Vehicle. Vehicle ID: {}, Start Direction-Lane: {}-{}, Target Direction: {}".format(self.env.now, self.vehicle_id, self.start_point, self.end_point, self.end_point))
         self.env.process(self.update_discomfort_value())
         yield self.env.timeout(0)
 
@@ -31,7 +31,7 @@ class Vehicle:
             yield self.env.timeout(self.update_interval)
 
     def drive(self):
-        logging.debug("Time: {} - ID: {}, Driving...".format(self.env.now, self.vehicle_id))
+        logging.debug("{:6.2f} - Vehicle is Moving. Vehicle ID: {}, Start Direction-Lane: {}-{}, Target Direction: {}".format(self.env.now, self.vehicle_id, self.start_point, self.end_point, self.end_point))
         self.isProcess = False
         yield self.env.timeout(self.vehicle_speed)
         self.isUpdateDiscomport = False
