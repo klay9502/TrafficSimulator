@@ -5,7 +5,7 @@ from collections import deque
 
 from definitions.vehicle import Vehicle
 
-class VehicleGenorator:
+class VehicleGenerator:
     def __init__(self, env, pattern, number, intersection_type, number_of_lanes, discomfort_value_update_interval, vehicle_speed, time_of_green_signal, infinity) -> None:
 
         self.env = env
@@ -21,17 +21,17 @@ class VehicleGenorator:
         # vehicle_queue[<intersection_position>][<lane_position>][<vehicle>]
         self.vehicle_queue = [[deque() for j in range(number_of_lanes)] for i in range(intersection_type)]
 
-        self.action = [env.process(self.vehicle_genorate(i)) for i in range(intersection_type)]
+        self.action = [env.process(self.vehicle_generate(i)) for i in range(intersection_type)]
 
-    def vehicle_genorate(self, direction) -> None:
+    def vehicle_generate(self, direction) -> None:
         if (self.infinity):
-            logging.info("vehicle_genorate:Vehicles will spawn indifinitely.")
+            logging.info("vehicle_generate:Vehicles will spawn indifinitely.")
             logging.info("It's not finished yet.")
             while(True):
                 logging.info("{}, Spawn Vehicle!".format(self.env.now))
                 yield self.env.timeout(self.spawn_interval)
         else:
-            logging.info("vehicle_genorate:Vehicles will spawn only {} unit.".format(self.number))
+            logging.info("vehicle_generate:Vehicles will spawn only {} unit.".format(self.number))
             for i in range(self.number):
                 random_list = []
                 for j in range(self.intersection_type):

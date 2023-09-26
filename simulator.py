@@ -4,7 +4,7 @@ import logging
 import simpy
 from definitions.pattern import Pattern
 from modules.trafficlight_manager import TrafficLightManager
-from modules.vehicle_genorator import VehicleGenorator
+from modules.vehicle_generator import VehicleGenerator
 from modules.plot_manager import PlotManager
 
 class Simulator:
@@ -115,7 +115,7 @@ class Simulator:
                                                    self.time_of_green_signal,
                                                    self.q_alpha,
                                                    self.q_gamma)
-        vehicle_generator = VehicleGenorator(env,
+        vehicle_generator = VehicleGenerator(env,
                                             pattern,
                                             self.number_of_vehicle,
                                             self.intersection_type,
