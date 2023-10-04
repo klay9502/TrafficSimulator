@@ -167,7 +167,7 @@ class Simulator:
             ped_generator.update_ped_queue()
 
             plot_manager.update_now_discomfort_value(vehicle_generator.get_vehicle_queue(), ped_generator.get_ped_queue(), self.weight)
-            trafficlight_manager.set_now_discomfort_value(plot_manager.get_now_vehicle_discomfort_value(), plot_manager.get_now_ped_discomfort_value())
+            trafficlight_manager.set_now_discomfort_value(plot_manager.get_now_total_discomfort_value())
             plot_manager.reset_now_discomfort_value()
 
             yield env.timeout(self.simulate_interval)

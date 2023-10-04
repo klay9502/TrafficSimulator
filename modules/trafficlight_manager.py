@@ -38,15 +38,14 @@ class TrafficLightManager:
                     self.now_signal += 1
             if self.learning_type == "basic_q":
                 self.algorithm.update_table(self.pattern.get_now_time(), self.now_signal, self.q_alpha, self.q_gamma)
-                self.algorithm.update_max_discomfort_zone(self.weight)
+                self.algorithm.update_max_discomfort_zone()
                 self.now_signal = self.algorithm.get_min_signal(self.pattern.get_now_time())
             
             self.set_is_signal_changed(True)
             logging.info("{:6.2f} - Time: {:2}, Signal is changed. Now Signal is {}".format(self.env.now, self.pattern.get_now_time(), self.now_signal))
 
-    def set_now_discomfort_value(self, now_vehicle_discomfort_value, now_ped_discomfort_value):
-        self.algorithm.set_now_vehicle_discomfort_value(now_vehicle_discomfort_value)
-        self.algorithm.set_now_ped_discomfort_value(now_ped_discomfort_value)
+    def set_now_discomfort_value(self, now_total_discomfort_value):
+        self.algorithm.set_now_total_discomfort_value(now_total_discomfort_value)
 
     def get_traffic_signal(self):
         return self.now_signal
