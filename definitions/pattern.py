@@ -4,48 +4,37 @@ import pandas as pd
 import numpy as np
 
 class Pattern:
-    def __init__(self, env, time_interval, vehicle_pattern_file_path, ped_pattern_file_path, gauss_standard_deviation) -> None:
+    def __init__(self, env, conf):
         self.env = env
-        self.time_interval = time_interval
-        self.vehicle_path = vehicle_pattern_file_path
-        self.ped_path = ped_pattern_file_path
-        self.gauss_standard_deviation = gauss_standard_deviation
+        self.conf= conf
 
-        self.vehlcie_list_data = np.empty((0, 0))
-        self.ped_list_data = np.empty((0, 0))
+        self.nowTime = 0
+        self.oldTime = 0
 
-        self.now_time = 0
-        self.old_env_time = 0.0
+        self.vehicleDataList = np.empty((0, 0))
 
         self.read_file()
-        self.action = env.process(self.time_update())
+        env.process(self.update_time())
 
     def read_file(self):
-        vehicle_data = pd.read_csv(self.vehicle_path)
-        ped_data = pd.read_csv(self.ped_path)
+        vehicleData = pd.read_csv(self.conf.vehiclePatternFilePath)
+        
+        self.vehicleDataList = vehicleData.__array__()
 
-        # Convert type dataframe to numpy array.
-        self.vehlcie_list_data = vehicle_data.__array__()
-        self.ped_list_data = ped_data.__array__()
+        # if (self.vehicleDataList.size / len(self.vehicleDataList)) != self.conf.numberOfLanes:
+        #     logging.error("Pattern:read_file() - The number of columns in the csv file differs from the intersection parameter.")
+        #     raise
     
-    def time_update(self):
+    def update_time(self):
         while True:
-            yield self.env.timeout(self.time_interval)
+            yield self.env.timeout(self.conf.timeInterval)
 
-            if self.now_time >= ((self.vehlcie_list_data.size / len(self.vehlcie_list_data)) - 1):
-                self.now_time = 0
+            if self.nowTime >= int((self.vehicleDataList.size / len(self.vehicleDataList)) - 1):
+                self.nowTime = 0
             else:
-                self.now_time += 1
-            logging.info("{:6.2f} - Time: {:2}, Time is changed.".format(self.env.now, self.now_time))
+                self.nowTime += 1
             
+            logging.info("{:6.2f} - Time: {:2}, Time is changed.".format(self.env.now, self.nowTime))
+
     def vehicle_spawn_time(self, direction):
-        return abs(random.gauss(self.vehlcie_list_data[direction][self.now_time], self.gauss_standard_deviation))
-    
-    def ped_spawn_time(self, direction):
-        return abs(random.gauss(self.ped_list_data[direction][self.now_time], self.gauss_standard_deviation))
-    
-    def get_last_time(self):
-        return self.vehlcie_list_data.size / len(self.vehlcie_list_data)
-    
-    def get_now_time(self):
-        return self.now_time
+        return abs(random.gauss(self.vehicleDataList[direction][self.nowTime], self.conf.gauseStandardDeviation))

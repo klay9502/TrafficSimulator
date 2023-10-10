@@ -3,175 +3,37 @@ import argparse
 import logging
 import simpy
 from definitions.pattern import Pattern
-from modules.pedestrian_generator import PedestrianGenerator
-from modules.trafficlight_manager import TrafficLightManager
-from modules.vehicle_generator import VehicleGenerator
+
+from modules.configuration import Configuration
 from modules.plot_manager import PlotManager
+from modules.traffic_manager import TrafficManager
+from modules.vehicle_generator import VehicleGenerator
 
 class Simulator:
     def __init__(self, conf) -> None:
         self.conf = conf
-        self.simulate_time = 0.0
-        self.simulate_interval = 0.0
-        self.time_interval = 0
 
-        self.vehicle_pattern_file_path = ""
-        self.ped_pattern_file_path = ""
-        self.gauss_standard_deviation = 0.0
-        self.learning_type = ""
+        self.module_init()
 
-        self.q_alpha = 0.0
-        self.q_gamma = 0.0
-
-        self.weight = 0.0
-
-        self.intersection_type = 0
-        self.number_of_lanes = 0
-
-        self.time_of_green_signal = 0
-
-        self.vehicle_spawn_infinity = True
-        self.vehicnumber_of_vehicle = 0
-        self.discomfort_value_update_interval = 0
-        self.vehicle_speed = 0.0
-
-        self.plt_moving_average = False
-        self.plt_moving_average_window = 0
-        self.plt_discomfort_value_record_interval = 0.0
-
-        self.parse_config()
-        self.run()
-
-    def parse_config(self) -> None:
-        with open(self.conf, "r") as file:
-            for line in file:
-                try:
-                    line = line.strip()
-                    if line.startswith("#"):
-                        # Exception the Comment Line.
-                        continue
-                    if line == "":
-                        continue
-
-                    key, val = line.split("=")
-                    key = key.strip()
-                    val = val.strip()
-                    if key == "simulate_time":
-                        self.simulate_time = float(val)
-                    if key == "simulate_interval":
-                        self.simulate_interval = float(val)
-                    if key == "time_interval":
-                        self.time_interval = int(val)
-                    if key == "vehicle_pattern_file_name":
-                        path = os.getcwd()
-                        file_name = os.path.join(path, val)
-                        if os.path.exists(file_name):
-                            self.vehicle_pattern_file_path = file_name
-                        else:
-                            logging.error("There are no file in {}".format(file_name))
-                            break
-                    if key == "pedestrian_pattern_file_name":
-                        path = os.getcwd()
-                        file_name = os.path.join(path, val)
-                        if os.path.exists(file_name):
-                            self.ped_pattern_file_path = file_name
-                        else:
-                            logging.error("There are no file in {}".format(file_name))
-                            break
-                    if key == "gauss_standard_deviation":
-                        self.gauss_standard_deviation = float(val)
-                    if key == "learning_type":
-                        self.learning_type = str(val)
-                    if key == "q_alpha":
-                        self.q_alpha = float(val)
-                    if key == "q_gamma":
-                        self.q_gamma = float(val)
-                    if key == "weight":
-                        self.weight = float(val)
-                    if key == "intersection_type":
-                        self.intersection_type = int(val)
-                    if key == "number_of_lanes":
-                        self.number_of_lanes = int(val)
-                    if key == "time_of_green_signal":
-                        self.time_of_green_signal = int(val)
-                    if key == "vehicle_spawn_infinity":
-                        if val == "True":
-                            self.vehicle_spawn_infinity = True
-                        else:
-                            self.vehicle_spawn_infinity = False
-                    if key == "number_of_vehicle":
-                        self.number_of_vehicle = int(val)
-                    if key == "discomfort_value_update_interval":
-                        self.discomfort_value_update_interval = float(val)
-                    if key == "vehicle_speed":
-                        self.vehicle_speed = float(val)
-                    if key == "plt_moving_average":
-                        if val == "True":
-                            self.plt_moving_average = True
-                        else:
-                            self.plt_moving_average = False
-                    if key == "plt_moving_average_window":
-                        self.plt_moving_average_window = int(val)
-                    if key == "plt_discomfort_value_record_interval":
-                        self.plt_discomfort_value_record_interval = float(val)
-
-                except:
-                    logging.error("Error in parsing the line: {}".format(line))
-                    continue
-
-    def run(self) -> None:
+    def module_init(self) -> None:
         env = simpy.Environment()
-        pattern = Pattern(env, self.time_interval, self.vehicle_pattern_file_path, self.ped_pattern_file_path, self.gauss_standard_deviation)
-        trafficlight_manager = TrafficLightManager(env,
-                                                   pattern,
-                                                   self.learning_type,
-                                                   self.intersection_type,
-                                                   self.time_of_green_signal,
-                                                   self.q_alpha,
-                                                   self.q_gamma,
-                                                   self.weight)
-        vehicle_generator = VehicleGenerator(env,
-                                            pattern,
-                                            self.number_of_vehicle,
-                                            self.intersection_type,
-                                            self.number_of_lanes,
-                                            self.discomfort_value_update_interval,
-                                            self.vehicle_speed,
-                                            self.time_of_green_signal,
-                                            self.vehicle_spawn_infinity)
-        
-        ped_generator = PedestrianGenerator(env,
-                                            pattern,
-                                            self.intersection_type,
-                                            self.discomfort_value_update_interval)
 
-        plot_manager = PlotManager(env,
-                                   self.intersection_type,
-                                   self.plt_moving_average,
-                                   self.plt_moving_average_window,
-                                   self.plt_discomfort_value_record_interval)
-        
-        env.process(self.update(env, trafficlight_manager, vehicle_generator, ped_generator, plot_manager))
-        env.run(until=self.simulate_time)
+        pattern = Pattern(env, self.conf)
 
-        plot_manager.print_plot()
+        vehicleGenerator = VehicleGenerator(env, self.conf, pattern)
 
-    def update(self, env, trafficlight_manager, vehicle_generator, ped_generator, plot_manager) -> None:
+        TrafficManager(env, self.conf, pattern, vehicleGenerator)
+
+        plotManager = PlotManager(env, self.conf, vehicleGenerator)
+
+        env.process(self.env_update(env))
+        env.run(until=self.conf.simulateTime)
+
+        plotManager.print_plot()
+
+    def env_update(self, env) -> None:
         while True:
-            if trafficlight_manager.get_is_signal_changed():
-                vehicle_generator.update_vehlcies_state(trafficlight_manager.get_traffic_signal())
-                ped_generator.update_ped_state(trafficlight_manager.get_traffic_signal())
-                trafficlight_manager.set_is_signal_changed(False)
-
-            vehicle_generator.update_vehicle_queue()
-            ped_generator.update_ped_queue()
-
-            plot_manager.update_now_discomfort_value(vehicle_generator.get_vehicle_queue(), ped_generator.get_ped_queue(), self.weight)
-            trafficlight_manager.set_now_discomfort_value(plot_manager.get_now_total_discomfort_value())
-            plot_manager.reset_now_discomfort_value()
-
-            yield env.timeout(self.simulate_interval)
-            
+            yield env.timeout(self.conf.simulateInterval)
 
 def command_line_args():
     parser = argparse.ArgumentParser()
@@ -183,7 +45,7 @@ def command_line_args():
 def main():
     args = command_line_args()
     logging.basicConfig(level=args.log)
-    simulator = Simulator(args.conf)
+    Simulator(Configuration(args.conf))
 
 if __name__ == "__main__":
     main()
