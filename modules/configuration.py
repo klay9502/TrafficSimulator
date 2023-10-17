@@ -11,6 +11,7 @@ class Configuration:
         self.timeInterval : int = 0
 
         self.vehiclePatternFilePath : str = ""
+        self.pedPatternFilePath : str = ""
         self.gauseStandardDeviation : float = 0.0
         self.learningType : str = ""
 
@@ -18,6 +19,8 @@ class Configuration:
         
         self.qAlpha : float = 0.0
         self.qGamma : float = 0.0
+
+        self.weight : float = 0.0
 
         self.intersectionType : int = 0
         self.numberOfLanes : int = 0
@@ -27,7 +30,10 @@ class Configuration:
         self.discomfortRange : float = 0.0
         self.discomfortInterval : float = 0.0
 
-        self.vehicleSpeed :float = 0.0
+        self.vehicleSpeed : float = 0.0
+
+        self.pltMovingAverageWindow : float = 0.0
+        self.pltDVRecordInterval : float = 0.0
 
         self.parse_config()
         
@@ -60,6 +66,14 @@ class Configuration:
                             self.vehiclePatternFilePath = fileName
                         else:
                             logging.error("Configuration:parse_config() - There are no file in {}".format(fileName))
+                    if key == "PEDESTRIAN_PATTERN_FILENAME":
+                        path = os.getcwd()
+                        path = path + "\patterns"
+                        fileName = os.path.join(path, val)
+                        if os.path.exists(fileName):
+                            self.pedPatternFilePath = fileName
+                        else:
+                            logging.error("Configuration:parse_config() - There are no file in {}".format(fileName))
                     if key == "GAUSS_STANDARD_DEVIATION":
                         self.gauseStandardDeviation = float(val)
                     if key == "LEARNING_TYPE":
@@ -70,6 +84,8 @@ class Configuration:
                         self.qAlpha = float(val)
                     if key == "Q_GAMMA":
                         self.qGamma = float(val)
+                    if key == "WEIGHT":
+                        self.weight = float(val)
                     if key == "INTERSECTION_TYPE":
                         self.intersectionType = int(val)
                     if key == "NUMBER_OF_LANES":
@@ -82,7 +98,11 @@ class Configuration:
                         self.discomfortInterval = float(val)
                     if key == "VEHICLE_SPEED":
                         self.vehicleSpeed = float(val)
+                    if key == "PLT_MOVING_AVERAGE_WINDOW":
+                        self.pltMovingAverageWindow = float(val)
+                    if key == "PLT_DISCOMFORT_VALUE_RECORD_INTERVAL":
+                        self.pltDVRecordInterval = float(val)
 
                 except:
                     logging.error("Configuration:parse_config() - Error in parsing the line: {}".format(line))
-                    continue
+                    raise

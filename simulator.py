@@ -5,6 +5,7 @@ import simpy
 from definitions.pattern import Pattern
 
 from modules.configuration import Configuration
+from modules.pedestrian_generator import PedestrianGenerator
 from modules.plot_manager import PlotManager
 from modules.traffic_manager import TrafficManager
 from modules.vehicle_generator import VehicleGenerator
@@ -21,10 +22,11 @@ class Simulator:
         pattern = Pattern(env, self.conf)
 
         vehicleGenerator = VehicleGenerator(env, self.conf, pattern)
+        pedestrianGenerator = PedestrianGenerator(env, self.conf, pattern)
 
-        TrafficManager(env, self.conf, pattern, vehicleGenerator)
+        trafficManager = TrafficManager(env, self.conf, pattern, vehicleGenerator, pedestrianGenerator)
 
-        plotManager = PlotManager(env, self.conf, vehicleGenerator)
+        plotManager = PlotManager(env, self.conf, vehicleGenerator, pedestrianGenerator)
 
         env.process(self.env_update(env))
         env.run(until=self.conf.simulateTime)

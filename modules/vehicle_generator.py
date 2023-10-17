@@ -18,15 +18,17 @@ class VehicleGenerator(ObjectGenerator):
         
     def generate(self, direction) -> None:
         logging.info("VehicleGenerator:generate() - Vehicles will spawn indifinitely.")
-        while(True):
-            random_list = []
-            for i in range(self.conf.intersectionType):
-                if i == direction:
-                    continue
-                else:
-                    random_list.append(i)
+        while True:
+            # randomList = []
+            # for i in range(self.conf.intersectionType):
+            #     if i == direction:
+            #         continue
+            #     else:
+            #         randomList.append(i)
             directionList = [direction, 0]
-            directionList[1] = random.choice(random_list)
+            directionList[1] = (direction + random.choice(range(1, self.conf.intersectionType))) % self.conf.intersectionType
+
+
             vehicle = Vehicle(self.env,
                               self.conf,
                               self.idCounter,
